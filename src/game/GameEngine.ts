@@ -140,7 +140,7 @@ export class GameEngine {
         y: npc.y,
         width: npc.width,
         height: npc.height,
-        angle: npc.angle,
+        angle: npc.angle + Math.PI / 2,
       });
 
       if (checkSATCollision(carCorners, npcCorners)) {

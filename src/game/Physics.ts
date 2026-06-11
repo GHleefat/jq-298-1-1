@@ -77,8 +77,9 @@ export function updateCarPhysics(
 export function getCarCorners(car: CarState): { x: number; y: number }[] {
   const halfW = car.width / 2;
   const halfH = car.height / 2;
-  const cos = Math.cos(car.angle);
-  const sin = Math.sin(car.angle);
+  const rotatedAngle = car.angle + Math.PI / 2;
+  const cos = Math.cos(rotatedAngle);
+  const sin = Math.sin(rotatedAngle);
 
   const corners = [
     { x: -halfW, y: -halfH },
