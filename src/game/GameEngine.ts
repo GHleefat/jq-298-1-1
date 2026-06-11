@@ -21,7 +21,7 @@ export class GameEngine {
   constructor(ctx: CanvasRenderingContext2D) {
     this.renderer = new Renderer(ctx, GAME_WIDTH, GAME_HEIGHT);
     this.roadCenterX = this.renderer.getRoadCenterX();
-    this.trafficSystem = new TrafficSystem(this.roadCenterX);
+    this.trafficSystem = new TrafficSystem(this.roadCenterX, this.renderer.getCrosswalkPositions());
     this.parkingSystem = new ParkingSystem();
     
     this.car = createInitialCarState(

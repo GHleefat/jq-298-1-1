@@ -5,36 +5,50 @@ export class TrafficSystem {
   private pedestrians: Pedestrian[] = [];
   private npcs: NPCVehicle[] = [];
   private roadCenterX: number;
+  private crosswalkPositions: number[];
   private lastPedestrianSpawn: number = 0;
   private lastNPCSpawn: number = 0;
 
-  constructor(roadCenterX: number) {
+  constructor(roadCenterX: number, crosswalkPositions: number[]) {
     this.roadCenterX = roadCenterX;
+    this.crosswalkPositions = crosswalkPositions;
     this.initializeTrafficLights();
     this.initializeNPCs();
   }
 
   private initializeTrafficLights(): void {
-    this.trafficLights = [
-      {
-        x: this.roadCenterX - ROAD_WIDTH / 2 - 30,
-        y: 300,
-        state: 'green',
-        timer: 0,
-        redDuration: 300,
-        yellowDuration: 60,
-        greenDuration: 300,
-      },
-      {
-        x: this.roadCenterX + ROAD_WIDTH / 2 + 30,
-        y: 550,
-        state: 'red',
-        timer: 0,
-        redDuration: 300,
-        yellowDuration: 60,
-        greenDuration: 300,
-      },
-    ];
+    const halfRoad = ROAD_WIDTH / 2;
+    const leftSide = this.roadCenterX - halfRoad - 30;
+    const rightSide = this.roadCenterX + halfRoad + 30;
+    
+    const lightCount = 2 + Math.floor(Math.random() * 2);
+    const usedY: number[] = [];
+    
+    this.trafficLights = [];
+    
+    for (let i = 0; i < lightCount; i++) {
+      let y: number;
+      let attempts = 0;
+      do {
+        y = 150 + Math.random() * 350;
+        attempts++;
+      } while (usedY.some(uy => Math.abs(uy - y) < 150) && attempts < 10);
+      usedY.push(y);
+      
+      const side = i % 2 === 0 ? leftSide : rightSide;
+      const states: ('red' | 'yellow' | 'green')[] = ['red', 'yellow', 'green'];
+      const initialState = states[Math.floor(Math.random() * 3)];
+      
+      this.trafficLights.push({
+        x: side,
+        y,
+        state: initialState,
+        timer: Math.random() * 200,
+        redDuration: 240 + Math.random() * 180,
+        yellowDuration: 50 + Math.random() * 40,
+        greenDuration: 240 + Math.random() * 180,
+      });
+    }
   }
 
   private initializeNPCs(): void {
@@ -42,28 +56,26 @@ export class TrafficSystem {
     const leftLaneX = this.roadCenterX - halfRoad / 2;
     const rightLaneX = this.roadCenterX + halfRoad / 2;
 
-    this.npcs = [
-      {
-        x: leftLaneX,
-        y: 200,
-        angle: -Math.PI / 2,
-        speed: 1.5,
-        maxSpeed: 2,
+    const npcCount = 2 + Math.floor(Math.random() * 2);
+    this.npcs = [];
+
+    for (let i = 0; i < npcCount; i++) {
+      const isLeftLane = i % 2 === 0;
+      const laneX = isLeftLane ? leftLaneX : rightLaneX;
+      const angle = isLeftLane ? -Math.PI / 2 : Math.PI / 2;
+      const maxSpeed = 1.2 + Math.random() * 1.5;
+      
+      this.npcs.push({
+        x: laneX + (Math.random() - 0.5) * 30,
+        y: Math.random() * GAME_HEIGHT,
+        angle,
+        speed: maxSpeed * (0.6 + Math.random() * 0.4),
+        maxSpeed,
         width: CAR_WIDTH,
         height: CAR_HEIGHT,
-        lane: 0,
-      },
-      {
-        x: rightLaneX,
-        y: 450,
-        angle: Math.PI / 2,
-        speed: 1.8,
-        maxSpeed: 2.5,
-        width: CAR_WIDTH,
-        height: CAR_HEIGHT,
-        lane: 1,
-      },
-    ];
+        lane: isLeftLane ? 0 : 1,
+      });
+    }
   }
 
   update(deltaTime: number): void {
@@ -120,8 +132,7 @@ export class TrafficSystem {
   }
 
   private spawnPedestrian(): void {
-    const crosswalks = [300, 550];
-    const crosswalkY = crosswalks[Math.floor(Math.random() * crosswalks.length)];
+    const crosswalkY = this.crosswalkPositions[Math.floor(Math.random() * this.crosswalkPositions.length)];
     const halfRoad = ROAD_WIDTH / 2;
     
     const fromLeft = Math.random() < 0.5;

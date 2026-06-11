@@ -1,6 +1,12 @@
 import { CarState, TrafficLight, Pedestrian, NPCVehicle, ParkingSpot, GAME_WIDTH, GAME_HEIGHT, ROAD_WIDTH } from './types';
 import { getCarCorners } from './Physics';
 
+interface NoiseParticle {
+  x: number;
+  y: number;
+  size: number;
+}
+
 export class Renderer {
   private ctx: CanvasRenderingContext2D;
   private width: number;
@@ -8,12 +14,48 @@ export class Renderer {
   private roadCenterX: number;
   private signalBlinkTimer: number = 0;
   private wiperAngle: number = 0;
+  private grassNoise: NoiseParticle[] = [];
+  private roadNoise: NoiseParticle[] = [];
+  private crosswalkPositions: number[] = [];
 
   constructor(ctx: CanvasRenderingContext2D, width: number, height: number) {
     this.ctx = ctx;
     this.width = width;
     this.height = height;
     this.roadCenterX = width / 2;
+    this.generateNoise();
+    this.generateCrosswalks();
+  }
+
+  private generateNoise(): void {
+    this.grassNoise = [];
+    for (let i = 0; i < 200; i++) {
+      this.grassNoise.push({
+        x: Math.random() * this.width,
+        y: Math.random() * this.height,
+        size: 2,
+      });
+    }
+
+    this.roadNoise = [];
+    const halfRoad = ROAD_WIDTH / 2;
+    const roadX = this.roadCenterX - halfRoad;
+    for (let i = 0; i < 50; i++) {
+      this.roadNoise.push({
+        x: roadX + 8 + Math.random() * (ROAD_WIDTH - 16),
+        y: Math.random() * this.height,
+        size: 1 + Math.random() * 2,
+      });
+    }
+  }
+
+  private generateCrosswalks(): void {
+    const crosswalkCount = 2;
+    this.crosswalkPositions = [];
+    const spacing = this.height / (crosswalkCount + 1);
+    for (let i = 0; i < crosswalkCount; i++) {
+      this.crosswalkPositions.push(spacing * (i + 1) + (Math.random() - 0.5) * 50);
+    }
   }
 
   clear(): void {
@@ -30,10 +72,8 @@ export class Renderer {
     this.ctx.fillRect(0, 0, this.width, this.height);
 
     this.ctx.fillStyle = 'rgba(255, 255, 255, 0.02)';
-    for (let i = 0; i < 200; i++) {
-      const x = Math.random() * this.width;
-      const y = Math.random() * this.height;
-      this.ctx.fillRect(x, y, 2, 2);
+    for (const particle of this.grassNoise) {
+      this.ctx.fillRect(particle.x, particle.y, particle.size, particle.size);
     }
   }
 
@@ -69,15 +109,13 @@ export class Renderer {
     this.ctx.lineTo(roadX + ROAD_WIDTH - 4, this.height);
     this.ctx.stroke();
 
-    this.drawCrosswalk(300);
-    this.drawCrosswalk(550);
+    for (const y of this.crosswalkPositions) {
+      this.drawCrosswalk(y);
+    }
 
     this.ctx.fillStyle = 'rgba(45, 55, 72, 0.5)';
-    for (let i = 0; i < 50; i++) {
-      const x = roadX + 8 + Math.random() * (ROAD_WIDTH - 16);
-      const y = Math.random() * this.height;
-      const size = 1 + Math.random() * 2;
-      this.ctx.fillRect(x, y, size, size);
+    for (const particle of this.roadNoise) {
+      this.ctx.fillRect(particle.x, particle.y, particle.size, particle.size);
     }
   }
 
@@ -329,5 +367,9 @@ export class Renderer {
 
   getRoadCenterX(): number {
     return this.roadCenterX;
+  }
+
+  getCrosswalkPositions(): number[] {
+    return [...this.crosswalkPositions];
   }
 }

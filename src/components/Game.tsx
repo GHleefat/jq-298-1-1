@@ -17,9 +17,10 @@ const Game: React.FC<GameProps> = ({ mode, onBack }) => {
   const [carState, setCarState] = useState<CarState | null>(null);
   const [gameState, setGameState] = useState<GameState | null>(null);
   const keysPressed = useRef<Set<string>>(new Set());
+  const isInitialized = useRef(false);
 
   useEffect(() => {
-    if (!canvasRef.current) return;
+    if (!canvasRef.current || isInitialized.current) return;
 
     const ctx = canvasRef.current.getContext('2d');
     if (!ctx) return;
@@ -27,12 +28,14 @@ const Game: React.FC<GameProps> = ({ mode, onBack }) => {
     const engine = new GameEngine(ctx);
     engine.setMode(mode);
     engineRef.current = engine;
+    isInitialized.current = true;
 
     setCarState(engine.getCarState());
     setGameState(engine.getGameState());
 
     return () => {
       engineRef.current = null;
+      isInitialized.current = false;
     };
   }, [mode]);
 
@@ -108,16 +111,6 @@ const Game: React.FC<GameProps> = ({ mode, onBack }) => {
     }
   };
 
-  if (!carState || !gameState) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-neon-green font-orbitron text-2xl animate-pulse">
-          加载中...
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div className="min-h-screen flex flex-col items-center justify-center p-4 relative">
       <div className="absolute top-4 left-4 z-20">
@@ -139,9 +132,19 @@ const Game: React.FC<GameProps> = ({ mode, onBack }) => {
           style={{ boxShadow: '0 0 30px rgba(0, 255, 136, 0.2)' }}
         />
         
-        <Dashboard carState={carState} gameState={gameState} />
+        {(!carState || !gameState) && (
+          <div className="absolute inset-0 flex items-center justify-center bg-night-bg/80 backdrop-blur-sm rounded-2xl z-10">
+            <div className="text-neon-green font-orbitron text-2xl animate-pulse">
+              加载中...
+            </div>
+          </div>
+        )}
+
+        {carState && gameState && (
+          <Dashboard carState={carState} gameState={gameState} />
+        )}
         
-        {gameState.mode === 'exam' && !gameState.showResult && (
+        {gameState && gameState.mode === 'exam' && !gameState.showResult && (
           <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 bg-night-card/80 backdrop-blur-sm rounded-xl px-6 py-3 border border-neon-green/50">
             <p className="text-neon-green font-jetbrains text-sm text-center">
               将车辆停入绿色标记的车位，停车后按 <span className="font-bold text-white">Enter</span> 提交
@@ -181,7 +184,7 @@ const Game: React.FC<GameProps> = ({ mode, onBack }) => {
         </div>
       </div>
 
-      {gameState.showResult && gameState.parkingResult && (
+      {gameState && gameState.showResult && gameState.parkingResult && (
         <Result
           parkingResult={gameState.parkingResult}
           gameState={gameState}
