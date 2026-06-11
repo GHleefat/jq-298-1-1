@@ -1,5 +1,10 @@
-import { CarState, ParkingSpot, ParkingResult, PARKING_SPOT_WIDTH, PARKING_SPOT_HEIGHT, GAME_WIDTH } from './types';
+import { CarState, ParkingSpot, ParkingResult, PARKING_SPOT_WIDTH, PARKING_SPOT_HEIGHT, GAME_WIDTH, ROAD_WIDTH } from './types';
 import { getCarCorners, isFullyInRect, calculateOverhangDistance, normalizeAngle } from './Physics';
+
+const ROAD_CENTER_X = GAME_WIDTH / 2;
+const SPOT_X = ROAD_CENTER_X + ROAD_WIDTH / 2 + PARKING_SPOT_WIDTH / 2 + 4;
+const PARKED_ANGLE_UP = -Math.PI / 2;
+const PARKED_ANGLE_DOWN = Math.PI / 2;
 
 export class ParkingSystem {
   private spots: ParkingSpot[] = [];
@@ -10,14 +15,13 @@ export class ParkingSystem {
   }
 
   private initializeParkingSpots(): void {
-    const spotX = GAME_WIDTH - 80;
-    const startY = 150;
-    const spacing = 85;
+    const startY = 120;
+    const spacing = PARKING_SPOT_HEIGHT + 10;
 
     this.spots = [];
     for (let i = 0; i < 4; i++) {
       this.spots.push({
-        x: spotX,
+        x: SPOT_X,
         y: startY + i * spacing,
         width: PARKING_SPOT_WIDTH,
         height: PARKING_SPOT_HEIGHT,
@@ -46,7 +50,7 @@ export class ParkingSystem {
       y: targetSpot.y,
       width: targetSpot.width,
       height: targetSpot.height,
-      angle: targetSpot.angle,
+      angle: 0,
     });
 
     const overhangDistance = calculateOverhangDistance(carCorners, {
@@ -54,19 +58,19 @@ export class ParkingSystem {
       y: targetSpot.y,
       width: targetSpot.width,
       height: targetSpot.height,
-      angle: targetSpot.angle,
+      angle: 0,
     });
 
-    const angleDeviation = Math.abs(normalizeAngle(car.angle - targetSpot.angle)) * (180 / Math.PI);
-    const normalizedAngle = Math.min(angleDeviation, 180 - angleDeviation);
+    const dev1 = Math.abs(normalizeAngle(car.angle - PARKED_ANGLE_UP)) * (180 / Math.PI);
+    const dev2 = Math.abs(normalizeAngle(car.angle - PARKED_ANGLE_DOWN)) * (180 / Math.PI);
+    const angleDeviation = Math.min(
+      Math.min(dev1, 180 - dev1),
+      Math.min(dev2, 180 - dev2)
+    );
 
     const dx = car.x - targetSpot.x;
     const dy = car.y - targetSpot.y;
-    const cos = Math.cos(-targetSpot.angle);
-    const sin = Math.sin(-targetSpot.angle);
-    const localX = dx * cos - dy * sin;
-    const localY = dx * sin + dy * cos;
-    const centerOffset = Math.sqrt(localX * localX + localY * localY);
+    const centerOffset = Math.sqrt(dx * dx + dy * dy);
 
     const isParked = isInBounds && Math.abs(car.speed) < 0.1;
 
@@ -78,11 +82,11 @@ export class ParkingSystem {
       score += Math.max(0, 40 - overhangDistance * 2);
     }
 
-    if (normalizedAngle < 5) {
+    if (angleDeviation < 5) {
       score += 20;
-    } else if (normalizedAngle < 15) {
+    } else if (angleDeviation < 15) {
       score += 10;
-    } else if (normalizedAngle < 30) {
+    } else if (angleDeviation < 30) {
       score += 5;
     }
 
@@ -114,7 +118,7 @@ export class ParkingSystem {
       isParked,
       isInBounds,
       overhangDistance,
-      angleDeviation: normalizedAngle,
+      angleDeviation,
       centerOffset,
       timeTaken: timeSeconds,
       score,

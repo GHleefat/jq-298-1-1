@@ -144,10 +144,18 @@ const Game: React.FC<GameProps> = ({ mode, onBack }) => {
           <Dashboard carState={carState} gameState={gameState} />
         )}
         
+        {gameState && !gameState.showResult && gameState.mode === 'practice' && gameState.timeElapsed < 8000 && (
+          <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 bg-night-card/80 backdrop-blur-sm rounded-xl px-6 py-3 border border-neon-green/50">
+            <p className="text-neon-green font-jetbrains text-sm text-center">
+              W 沿道路前进，A/D 左右转向，S 刹车/倒车
+            </p>
+          </div>
+        )}
+        
         {gameState && gameState.mode === 'exam' && !gameState.showResult && (
           <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 bg-night-card/80 backdrop-blur-sm rounded-xl px-6 py-3 border border-neon-green/50">
             <p className="text-neon-green font-jetbrains text-sm text-center">
-              将车辆停入绿色标记的车位，停车后按 <span className="font-bold text-white">Enter</span> 提交
+              W 沿道路前进，侧方停车需先转向再入库，停好后按 <span className="font-bold text-white">Enter</span> 提交
             </p>
           </div>
         )}

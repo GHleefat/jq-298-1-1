@@ -139,7 +139,7 @@ export class Renderer {
 
     ctx.save();
     ctx.translate(car.x, car.y);
-    ctx.rotate(car.angle);
+    ctx.rotate(car.angle + Math.PI / 2);
 
     const bodyColor = isPlayer ? '#3b82f6' : '#6b7280';
     const wheelColor = '#1f2937';
